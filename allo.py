@@ -126,7 +126,7 @@ def list_command(chat_id: str) -> str:
             'Add users with <code>/g + @username</code>.'
         )
 
-    user_list = '\n'.join(f'{i + 1}. @{user}' for i, user in enumerate(group_users))  # noqa: E501
+    user_list = '\n'.join(f'- {user}' for user in group_users)
     return f'<b>👥 Users in the mention group:</b>\n\n{user_list}'
 
 
