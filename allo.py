@@ -10,11 +10,12 @@ from typing import Any
 
 from aiogram import Bot
 from aiogram import Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.filters import CommandObject
 from aiogram.types import BotCommand
 from aiogram.types import Message
-
 
 APP_NAME = 'allo-code'
 BOT_TOKEN = os.environ['ALLO_TOKEN']
@@ -64,10 +65,18 @@ dp = Dispatcher()
 user_groups = load_data()
 
 
+def start_command() -> str:
+    return (
+        "👋 Welcome! I'm here to help you manage mention groups.\n\n"
+        'Use /help to see all available commands.'
+    )
+
+
 def g_command(args: str | None, chat_id: str) -> str:
     error_msg = (
-        '⚠️ *Invalid format!\n'
-        'Use `/g + @username` to add or `/g - @username` to remove.'
+        '⚠️ <b>Invalid format!</b>\n'
+        'Use <code>/g + @username</code> to add or <code>/g - '
+        '@username</code> to remove.'
     )
     if args is None:
         return error_msg
@@ -89,7 +98,7 @@ def g_command(args: str | None, chat_id: str) -> str:
     else:
         if user in user_groups[chat_id]:
             user_groups[chat_id].remove(user)
-        resp = f'🗑️ User @{user} has been *removed from the mention group.'
+        resp = f'🗑️ User @{user} has been removed from the mention group.'
 
     save_data(user_groups)
     return resp
@@ -104,7 +113,7 @@ def call_command(chat_id: str) -> str:
     else:
         resp = (
             'Nobody to call! The group is empty.\n'
-            'Add users with `/g + @username`.'
+            'Add users with <code>/g + @username</code>.'
         )
     return resp
 
@@ -114,18 +123,24 @@ def list_command(chat_id: str) -> str:
     if not group_users:
         return (
             'ℹ️ The mention group is empty.  '
-            'Add users with `/g + @username`.'
+            'Add users with <code>/g + @username</code>.'
         )
 
     user_list = '\n'.join(f'{i + 1}. @{user}' for i, user in enumerate(group_users))  # noqa: E501
-    return f'👥 Users in the mention group:\n\n{user_list}'
+    return f'<b>👥 Users in the mention group:</b>\n\n{user_list}'
 
 
 def help_command() -> str:
     commands_text = '\n'.join(
-        f'/{cmd.command} - {cmd.description}' for cmd in private_commands
+        f'<code>/{cmd.command}</code> - {cmd.description}' for
+        cmd in private_commands
     )
-    return f'Available commands:\n\n{commands_text}'
+    return f'<b>Available commands:</b>\n\n{commands_text}'
+
+
+@dp.message(Command('start'))
+async def handle_start_command(message: Message) -> None:
+    await message.reply(start_command())
 
 
 @dp.message(Command('g'))
@@ -156,7 +171,10 @@ async def handle_help_command(message: Message) -> None:
 
 async def _main() -> None:
     logging.basicConfig(level=logging.INFO)
-    bot = Bot(token=BOT_TOKEN)
+    bot = Bot(
+        token=BOT_TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
     await bot.set_my_commands(commands=private_commands)
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
