@@ -152,6 +152,7 @@ async def handle_group_management(
     await message.reply(g_command(command.args, chat_id))
 
 
+@dp.message(Command('c'))
 @dp.message(Command('call'))
 async def handle_call_command(message: Message) -> None:
     chat_id = str(message.chat.id)
