@@ -104,18 +104,22 @@ def g_command(args: str | None, chat_id: str) -> str:
     return resp
 
 
-def call_command(chat_id: str) -> str:
+def call_command(chat_id: str, sender_username: str | None = None) -> str:
     users_to_call = user_groups.get(chat_id)
 
     if users_to_call:
-        mention_string = ' '.join([f'@{user}' for user in users_to_call])
-        resp = f'📣 Calling all members!\n\n{mention_string}'
-    else:
-        resp = (
-            'Nobody to call! The group is empty.\n'
-            'Add users with <code>/g + @username</code>.'
-        )
-    return resp
+        filtered_users = [
+            user for user in users_to_call if user != sender_username
+        ]
+
+        if filtered_users:
+            mention_string = ' '.join([f'@{user}' for user in filtered_users])
+            return f'📣 Calling all members!\n\n{mention_string}'
+
+    return (
+        'Nobody to call! The group is empty or only contains you.\n'
+        'Add users with <code>/g + @username</code>.'
+    )
 
 
 def list_command(chat_id: str) -> str:
@@ -156,7 +160,8 @@ async def handle_group_management(
 @dp.message(Command('call'))
 async def handle_call_command(message: Message) -> None:
     chat_id = str(message.chat.id)
-    await message.reply(call_command(chat_id))
+    sender_username = message.from_user.username
+    await message.reply(call_command(chat_id, sender_username))
 
 
 @dp.message(Command('list'))
